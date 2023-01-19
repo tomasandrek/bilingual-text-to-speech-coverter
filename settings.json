@@ -1,0 +1,13 @@
+{
+  "firstLanguage": {
+    "code": "sk",
+    "name": "Slovak",
+    "columnIndex": 1
+  },
+  "secondLanguage": {
+    "code": "en",
+    "name": "English",
+    "columnIndex": 2
+  },
+  "silenceInterval": 5000
+}

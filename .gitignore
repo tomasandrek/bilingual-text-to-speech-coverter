@@ -1,3 +1,13 @@
+# FFmpeg files
+ffmpeg.exe
+ffprobe.exe
+
+# Data folder
+data/
+
+# IDE
+.idea/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
