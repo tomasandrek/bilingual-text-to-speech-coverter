@@ -1,45 +1,77 @@
+import constants
 import csv
 import json
+import os
 from settings import Settings, Language
 from gtts import gTTS
 from pydub import AudioSegment
 
 
-with open("settings.json", "r") as f:
-    settings_json = json.load(f)
-
-settings = Settings(Language(settings_json['firstLanguage']['code'], settings_json['firstLanguage']['name'], settings_json['firstLanguage']['columnIndex']),
-                Language(settings_json['secondLanguage']['code'], settings_json['secondLanguage']['name'], settings_json['secondLanguage']['columnIndex']),
-                settings_json['silenceInterval'])
-
-print(settings.first_language.name)
+def merge_sounds(result: AudioSegment, sound1: AudioSegment, sound2: AudioSegment, silence: AudioSegment):
+    return result + sound1 + silence + sound2 + silence
 
 
-csv_file = open('DailyWordsAllTogether.csv','r')
+def cleanup():
+    if os.path.exists(constants.FIRST_TEMP_FILE):
+        os.remove(constants.FIRST_TEMP_FILE)
 
-silence_segment = AudioSegment.silent(duration=5000)
-silence_segment.export('result.mp3', format="mp3")
+    if os.path.exists(constants.SECOND_TEMP_FILE):
+        os.remove(constants.SECOND_TEMP_FILE)
 
-i = 0
 
-for row in csv.reader(csv_file, delimiter=';'):
-    first_item = gTTS(text=row[0], lang="sk", slow=False)
-    second_item = gTTS(text=row[1], lang="en", slow=False)
-    with open("first_item_temp.mp3", "wb") as f:
-        first_item.write_to_fp(f)
+try:
+    with open("settings.json", "r") as f:
+        settings_json = json.load(f)
 
-    with open("second_item_temp.mp3", "wb") as s:
-        second_item.write_to_fp(s)
+    settings = Settings(Language(settings_json['firstLanguage']['code'], settings_json['firstLanguage']['name'],
+                                 settings_json['firstLanguage']['columnIndex']),
+                        Language(settings_json['secondLanguage']['code'], settings_json['secondLanguage']['name'],
+                                 settings_json['secondLanguage']['columnIndex']),
+                        settings_json['silenceInterval'], settings_json['csvSeparator'])
 
-    result = AudioSegment.from_mp3("result.mp3")
-    sound1 = AudioSegment.from_mp3("first_item_temp.mp3")
-    sound2 = AudioSegment.from_mp3("second_item_temp.mp3")
+    print("Please specify the input file name:")
+    file_name = input()
 
-    to_save = result + sound1 + silence_segment + sound2 + silence_segment
+    # Load CSV file
+    csv_file = open(os.path.join("data", file_name), 'r')
 
-    to_save.export("result.mp3", format="mp3")
+    # Generate a segment of silence
+    silence_segment = AudioSegment.silent(duration=settings.silence_interval)
+    silence_segment.export(constants.RESULT_FILE_NAME, format="mp3")
 
-    print("Finished row: " + str(i))
-    i = i + 1
+    i = 1
+    # Iterate through rows (phrases)
+    for row in csv.reader(csv_file, delimiter=settings.csv_separator):
+        try:
+            # Convert the text to speech using gTTS (Google Text-to-Speech)
+            first_item = gTTS(text=row[settings.first_language.column_index], lang=settings.first_language.code,
+                              slow=False)
+            second_item = gTTS(text=row[settings.second_language.column_index], lang=settings.second_language.code,
+                               slow=False)
 
-print("Program finished!")
+            # Save as MP3
+            with open(constants.FIRST_TEMP_FILE, "wb") as f:
+                first_item.write_to_fp(f)
+
+            with open(constants.SECOND_TEMP_FILE, "wb") as s:
+                second_item.write_to_fp(s)
+
+            # Load from MP3. This step is because of merging sounds. We have to have the same data type
+            result = AudioSegment.from_mp3(constants.RESULT_FILE_NAME)
+            sound1 = AudioSegment.from_mp3(constants.FIRST_TEMP_FILE)
+            sound2 = AudioSegment.from_mp3(constants.SECOND_TEMP_FILE)
+
+            # Save the result
+            to_save = merge_sounds(result, sound1, sound2, silence_segment)
+            to_save.export(constants.RESULT_FILE_NAME, format="mp3")
+
+            print(f"Finished row: {str(i)}.")
+        except Exception as err:
+            print(f"Error in row: {str(i)}. {row[0]} ", err)
+        finally:
+            i = i + 1
+except Exception as err:
+    print("Error: ", err)
+finally:
+    cleanup()
+    print("Program finished!")

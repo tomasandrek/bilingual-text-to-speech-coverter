@@ -2,12 +2,13 @@
   "firstLanguage": {
     "code": "sk",
     "name": "Slovak",
-    "columnIndex": 1
+    "columnIndex": 0
   },
   "secondLanguage": {
     "code": "en",
     "name": "English",
-    "columnIndex": 2
+    "columnIndex": 1
   },
-  "silenceInterval": 5000
+  "silenceInterval": 5000,
+  "csvSeparator": ","
 }
