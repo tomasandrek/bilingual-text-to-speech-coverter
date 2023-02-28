@@ -1,3 +1,4 @@
-RESULT_FILE_NAME = "result.mp3"
-FIRST_TEMP_FILE = "first_item_temp.mp3"
-SECOND_TEMP_FILE = "second_item_temp.mp3"
+RESULT_FILE_NAME = "result"
+FIRST_TEMP_FILE = "first_item_temp"
+SECOND_TEMP_FILE = "second_item_temp"
+RESULT_FILE_EXTENSION = ".mp3"
